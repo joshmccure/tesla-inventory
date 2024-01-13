@@ -1,0 +1,21 @@
+{
+  "name": "tesla-inventory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "my:bne": "node index.js --model=my --location=Brisbane",
+    "my:gc": "node index.js --model=my --location='Gold Coast'"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "puppeteer": "^21.7.0"
+  },
+  "dependencies": {
+    "inquirer": "^9.2.12",
+    "minimist": "^1.2.8"
+  }
+}
