@@ -4,7 +4,7 @@ import minimist from 'minimist';
 import fs from 'fs/promises';
 import path from 'path';
 import { sendPushNotification } from './notify.js';
-
+import { sendDiscordNotification } from './notifyDiscord.js'
 
 const args = minimist(process.argv.slice(2));
 const filePath = path.join(process.cwd(), 'previousCars.json');
@@ -142,6 +142,8 @@ const getModelAndLocation = async () => {
               console.error('Notification failed');
             }
           });
+
+          sendDiscordNotification(`**New Tesla ${carModel.name} listed in ${location.name}** \n ${newCars[0].name} \n **${newCars[0].price}**`);
 
         // Update the data for the current location
         allPreviousCars[location.name] = results;
