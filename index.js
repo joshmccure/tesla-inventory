@@ -11,31 +11,31 @@ const filePath = path.join(process.cwd(), 'previousCars.json');
 
 async function readPreviousData() {
     try {
-      const data = await fs.readFile(filePath, 'utf8');
-      return JSON.parse(data);
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data);
     } catch (error) {
-      if (error.code === 'ENOENT') { return {}; }
-      throw error;
+        if (error.code === 'ENOENT') { return {}; }
+        throw error;
     }
-  }
-  
-  // Function to save current car data
-  async function saveCurrentData(data) {
+}
+
+// Function to save current car data
+async function saveCurrentData(data) {
     try {
-      const json = JSON.stringify(data, null, 2);
-      await fs.writeFile(filePath, json, 'utf8');
+        const json = JSON.stringify(data, null, 2);
+        await fs.writeFile(filePath, json, 'utf8');
     } catch (error) {
-      console.error("Error saving data:", error);
+        console.error("Error saving data:", error);
     }
-  }
-  
+}
+
 
 const getModelAndLocation = async () => {
     const modelChoices = [
-        { name: 'Model Y', value: {code: 'my', name: 'Model Y'} },
-        { name: 'Model 3', value: {code: 'm3', name: 'Model 3'} },
-        { name: 'Model X', value: {code: 'mx', name: 'Model X'} },
-        { name: 'Model S', value: {code: 'ms', name: 'Model S'} }
+        { name: 'Model Y', value: { code: 'my', name: 'Model Y', linkPrefix:  'LRWY'} },
+        { name: 'Model 3', value: { code: 'm3', name: 'Model 3', linkPrefix:  'LRW'} },
+        { name: 'Model X', value: { code: 'mx', name: 'Model X' } },
+        { name: 'Model S', value: { code: 'ms', name: 'Model S' } }
 
     ];
 
@@ -102,26 +102,29 @@ const getModelAndLocation = async () => {
                 let basicInfo = Array.from(basicInfoNodes).slice(0, 2).map(node => node.innerText).join(' - ');
                 let features = article.querySelector('.result-regular-features')?.innerText;
                 const price = article.querySelector('.result-purchase-price')?.innerText.trim();
-    
-    
+                const id = article.getAttribute('data-id').replace('-search-result-container', '')
+
+
                 // Clean up and format the basicInfo and features
                 basicInfo = basicInfo.replace(/\n/g, ' - ').trim();
                 features = features.replace(/\n/g, ', ').replace(/’’/g, '').trim();
-    
+
                 // Create an object with name and features
                 return {
                     name: basicInfo,
                     features: features,
-                    price: price
+                    price: price,
+                    id: id,
+                    link: `https://www.tesla.com/en_AU/my/order/LRWY${id}`
                 };
             });
         });
-    
+
 
 
         const previousCars = allPreviousCars[location.name] || [];
-        const newCars = results.filter(car => !previousCars.some(prevCar => 
-            prevCar.name === car.name && 
+        const newCars = results.filter(car => !previousCars.some(prevCar =>
+            prevCar.name === car.name &&
             prevCar.price === car.price));
 
         console.log(results);
@@ -137,20 +140,26 @@ const getModelAndLocation = async () => {
         sendPushNotification(carModel.name, location.name, results, newCars, (stdout, stderr, error) => {
             // You can handle the results here or perform other actions
             if (!error) {
-              console.log('Notification sent');
+                console.log('Notification sent');
             } else {
-              console.error('Notification failed');
+                console.error('Notification failed');
             }
-          });
+        });
 
-          sendDiscordNotification(`**New Tesla ${carModel.name} listed in ${location.name}** \n ${newCars[0].name} \n **${newCars[0].price}**`);
+        let discordMessage = `**New Tesla ${carModel.name} listed in ${location.name}**\n`;
+        newCars.forEach(car => {
+            discordMessage += `[${car.name}](${car.link}) \n **${car.price}**\n`;
+        });
+        console.log(`discord message: ${discordMessage}`)
+
+        sendDiscordNotification(discordMessage);
 
         // Update the data for the current location
         allPreviousCars[location.name] = results;
         // Save the updated data
         await saveCurrentData(allPreviousCars);
-    
-    
+
+
         await browser.close();
 
     } catch (error) {
